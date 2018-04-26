@@ -1,0 +1,39 @@
+﻿
+@{
+    ViewBag.Title = "MyBillboards";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@if (ViewBag.Count > 0)
+{
+    <h2>Ваши биллборды:</h2>
+}
+else
+{
+    <h2>У вас отсутствуют арендованные биллборды :(</h2>
+}
+
+<table id="BillboardTable">
+    <tr>
+        <td>Id биллборда</td>
+        <td>Описание</td>
+        <td>Стоимость в месяц</td>
+        <td>Конец аренды</td>
+    </tr>
+
+    @foreach (var billboard in ViewBag.Billboards)
+    {
+    <tr>
+        <td>@billboard.Id</td>
+        <td><a href="../Home/More/@billboard.Id">@billboard.Description</a></td>
+        <td>@billboard.Cost рублей</td>
+        <td>@billboard.EndRent.ToString("d")</td>
+    </tr>
+    }
+</table>
+
+<style>
+    TD, TH {
+        padding: 5px; /* Поля вокруг текста */
+    }
+</style>

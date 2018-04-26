@@ -1,0 +1,299 @@
+﻿@{
+    ViewBag.Title = "EditBillboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<head><meta http-equiv="Cache-Control" content="no-cache"></head>
+<h3>Редактирование биллбордов</h3>
+
+<div class="billboards">
+    <div class="gmap"> <div id="googleMap"></div> </div>
+    <div class="blist" id="blid">
+        <div class="billboardMenu active" id="all">Все</div>
+        <div class="billboardMenu" id="free">Свободные</div>
+        <div class="billboardContainer">
+            @foreach (var b in ViewBag.Billboards)
+            {
+                <div class="billboard" id="@b.Id" free="@((b.TenantId == null || b.TenantId == "").ToString())" 
+                     onclick="fill(id)" desc="@b.Description" tenant="@b.TenantId" lat="@b.Lat"
+                     long="@b.Long" height="@b.Height" width="@b.Width" image="@b.ImageName", 
+                     cost="@b.Cost">
+                    @b.Description
+                    <br> Площадь: @((b.Height * b.Width).ToString("0.0")) m<sup>2</sup>
+                    <br> Цена @b.Cost рублей в месяц
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="editMenu">
+    <table class="editTable">
+        <tr>
+            <td>Описание</td>
+            <td>Арендатор</td>
+            <td>Широта</td>
+            <td>Долгота</td>
+            <td>Высота</td>
+            <td>Ширина</td>
+            <td>Цена</td>
+            <td>Изображение</td>
+        </tr>
+        <tr>
+            <form id="editForm" name="editForm" action="/Admin/ChangeBillboard" enctype = "multipart/form-data" method="post">
+                <td><textarea name="desc" id="desc" cols="40" rows="3" form="editForm"></textarea></td>
+                <td><input type="text" name="tenant" id="tenant"></td>
+                <td><input type="text" name="lat" id="lat"></td>
+                <td><input type="text" name="lng" id="long"></td>
+                <td><input type="text" name="height" id="height"></td>
+                <td><input type="text" name="width" id="width"></td>
+                <td><input type="text" name="cost" id="cost"></td>
+                <td><input type="file" name="imgFile" id="imgFile"></td>
+                <input type="hidden" name="id" id="id">
+                <input type="hidden" name="type" id="type">
+            </form>
+        </tr>
+    </table>
+</div>
+<div class="buttons">
+    <div class="saveBtn"><input value="Сохранить изменения" onclick="changeBB('save')" type="button" id="saveBB"></div>
+    <div class="createBtn"><input value="Сохранить как новый" onclick="changeBB('create')" type="button" id="createBB"></div>
+    <div class="deleteBtn"><input value="Удалить" onclick="changeBB('delete')" type="button" id="deleteBB"></div>
+
+</div>
+
+<img id="imageBB">
+
+<style>
+    #imageBB {
+        margin: auto;
+    }
+     .buttons {
+         width: 100%;
+         height: 30px;
+     }
+
+    #saveBB, #createBB, #deleteBB {
+        float: left;
+        margin: 2px;
+    }
+    textarea {
+        resize: none;
+    }
+    .billboards {
+        height: 350px;
+    }
+
+    .editMenu{
+        
+        height: 100px;
+        margin: auto;
+        margin-top: 50px;
+    }
+
+    .editTable{
+        font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+        font-size: 14px;
+        border-collapse: collapse;
+        text-align: center;
+        padding: 10px 20px;
+    }
+    #short, #lat, #long, #height, #width, #cost{
+        width:75px;
+    }
+
+    #googleMap {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    var arrMarkers = {};
+    var arrIW = {};
+    var globMap;
+
+    function changeBB(typeStr) {
+        document.getElementById("type").value = typeStr;
+        document.getElementById("editForm").submit();
+    }
+    function fill(id) {
+        var x = document.getElementById(id).getAttribute("tenant");
+        document.getElementById("tenant").value = x;
+        x = document.getElementById(id).getAttribute("desc");
+        document.getElementById("desc").value = x;
+        x = document.getElementById(id).getAttribute("lat");
+        document.getElementById("lat").value = x;
+        x = document.getElementById(id).getAttribute("long");
+        document.getElementById("long").value = x;
+        x = document.getElementById(id).getAttribute("height");
+        document.getElementById("height").value = x;
+        x = document.getElementById(id).getAttribute("width");
+        document.getElementById("width").value = x;
+        x = document.getElementById(id).getAttribute("cost");
+        document.getElementById("cost").value = x;
+        document.getElementById("id").value = id;
+        document.getElementById("imageBB").src = "/Resources/" + id + ".png?" + Math.random();
+
+        $('#editForm').on('keyup keypress', function(e) {
+            var keyCode = e.keyCode || e.which;
+            if (keyCode === 13) { 
+                e.preventDefault();
+                return false;
+            }
+        });
+
+    }
+
+
+    function initMap() {
+        var Tomsk = new google.maps.LatLng(56.5010, 84.9925);
+        var map = new google.maps.Map(document.getElementById('googleMap'),
+            {
+                zoom: 11,
+                center: Tomsk,
+                draggableCursor: 'pointer'
+    });
+        globMap = map;
+        @foreach (var billboard in ViewBag.Billboards)
+        {
+            @:addMarker(@billboard.Lat, @billboard.Long, '@billboard.Description', Number(@billboard.Width * @billboard.Height).toFixed(1), map, '@billboard.Id');
+        }
+
+        map.addListener('click', function (e) {
+            document.getElementById("lat").value = e.latLng.lat();
+            document.getElementById("long").value = e.latLng.lng();
+            });
+        
+        initMenu();
+    }
+
+    function initMenu() {
+        
+        document.getElementById("all").style.background = "#007bff";
+        document.getElementById("all").style.cursor = "default";
+
+        document.getElementById("all").addEventListener("mouseover", function () { menuMouseOver("all") });
+        document.getElementById("all").addEventListener("mouseout", function () { menuMouseOut("all") });
+        document.getElementById("all").addEventListener("click", function () { menuClick("all") });
+        document.getElementById("free").addEventListener("mouseover", function () { menuMouseOver("free") });
+        document.getElementById("free").addEventListener("mouseout", function () { menuMouseOut("free") });
+        document.getElementById("free").addEventListener("click", function () { menuClick("free") });
+
+    }
+
+    function menuMouseOver(id) {
+        if (document.getElementById(id).classList.contains("active")) {
+            document.getElementById(id).style.background="#007bff";
+            } else {
+            document.getElementById(id).style.background = " #e9ecef";
+                }
+    }
+
+    function menuMouseOut(id) {
+        if (document.getElementById(id).classList.contains("active")) {
+            document.getElementById(id).style.background="#007bff";
+        } else {
+            document.getElementById(id).style.background = " #fff";
+        }
+    }
+
+    function menuClick(id) {
+        if (id == "all") {
+            if (!document.getElementById(id).classList.contains("active")) {
+                showDiv();
+                document.getElementById(id).style.cursor = "default";
+                document.getElementById(id).style.background = "#007bff";
+                $(document.getElementById(id)).addClass("active");
+                document.getElementById("free").style.background = "#fff";
+                $(document.getElementById("free")).removeClass("active");
+                document.getElementById("free").style.cursor = "pointer";
+            }
+        } else {
+            if (!document.getElementById(id).classList.contains("active")) {
+                hideDiv();
+                document.getElementById(id).style.cursor = "default";
+                document.getElementById(id).style.background = "#007bff";
+                $(document.getElementById(id)).addClass("active");
+                document.getElementById("all").style.background = "#fff";
+                $(document.getElementById("all")).removeClass("active");
+                document.getElementById("all").style.cursor = "pointer";
+            }
+
+        }
+    }
+
+    function hideDiv() {
+        $('.billboard').each(function() {
+            if ($(this).attr("free") == "False") {
+                $(this).hide();
+                var id = $(this).attr("id");
+                arrMarkers[id].setVisible(false);
+            }
+        });
+    }
+
+    function showDiv() {
+        $('.billboard').each(function () {
+            $(this).show();
+            var id = $(this).attr("id");
+            arrMarkers[id].setVisible(true);
+        });
+    }
+
+    function addMarker(latitude, longitude, title, description, map, id) {
+        var latLng = new google.maps.LatLng(latitude, longitude);
+        var contentString = '<h3>' +
+            title +
+            '</h3>' +
+            '<p> Площадь ' +
+            description +
+            ' м<sup>2</sup></p>';
+
+        var infowindow = new google.maps.InfoWindow({
+            content: contentString
+        });
+
+        arrIW[id] = infowindow;
+        var marker = new google.maps.Marker({
+            position: latLng,
+            title: title,
+            map: map,
+            draggable: false,
+        });
+        arrMarkers[id] = marker;
+
+        google.maps.event.addListener(marker,
+            'click',
+            function () { fill(id) });
+
+        google.maps.event.addListener(marker,
+            'mouseover',
+            function () {
+                //document.getElementById(id).scrollIntoView({ block: "start", behavior: "smooth" });
+
+                infowindow.open(map, marker);
+                $(document.getElementById(id)).addClass("active");
+            });
+
+        google.maps.event.addListener(marker,
+            'mouseout',
+            function () {
+                $(document.getElementById(id)).removeClass("active");
+                infowindow.close(map, marker);
+            });
+        document.getElementById(id).addEventListener("mouseover", function () { openWindow(id) });
+        document.getElementById(id).addEventListener("mouseout", function () { closeWindow(id) });
+    }
+
+    function openWindow(id) {
+        arrIW[id].open(globMap, arrMarkers[id]);
+    }
+
+    function closeWindow(id) {
+        //debugger;
+        arrIW[id].close(globMap, arrMarkers[id]);
+    }
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCoa1zfjh_InWn9xUm2JDsuH1QK6-CFdq8&callback=initMap"></script>
+

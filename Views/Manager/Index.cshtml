@@ -1,0 +1,62 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<h1>Новые заявки</h1>
+
+<table id="ApplicationTable">
+    <tr>
+        <td>Id арендатора</td>
+        <td>Email арендатора</td>
+        <td>Биллборд</td>
+        <td>Контактный телефон</td>
+    </tr>
+
+    @foreach (var ap in ViewBag.Applications)
+    {
+        <tr>
+            <td>@ap.TenantId</td>
+            <td>@ap.TenantMail</td>
+            <td><a href="../Home/More/@ap.BillboardId">@ap.BillboardDesc</a></td>
+            <td>@ap.ContactPhone</td>
+
+            @if (ap.Status == "wait")
+            {
+                <td onclick="change('@ap.Id', '@ap.TenantId', '@ap.BillboardId', 'true')" class="manstat">
+                    <a>Одобрить</a>
+                </td>
+                <td onclick="change('@ap.Id', '@ap.TenantId', '@ap.BillboardId', 'false')" class="manstat">
+                    <a>Отклонить</a>
+                </td>
+            }
+        </tr>
+    }
+</table>
+
+<form id="appForm" name="appForm" action="/Manager/ChangeApplication" method="post">
+    <input name="appId" id="appId" type="hidden">
+    <input name="tenantId" id="tenantId" type="hidden">
+    <input name="billboardId" id="billboardId" type="hidden">
+    <input name="status" id="status" type="hidden">
+</form>
+
+<style>
+    TD, TH {
+        padding: 5px; /* Поля вокруг текста */
+    }
+
+    .manstat {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    function change(appId, tenantId, billboardId, status) {
+        document.getElementById("appId").value = appId;
+        document.getElementById("tenantId").value = tenantId;
+        document.getElementById("billboardId").value = billboardId;
+        document.getElementById("status").value = status;
+        document.getElementById("appForm").submit();
+    }
+</script>

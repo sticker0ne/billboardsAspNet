@@ -1,0 +1,46 @@
+﻿
+@{
+    ViewBag.Title = "EditUser";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>EditUser</h2>
+<table id="userTable">
+    @foreach (var u in ViewBag.Users)
+    {
+        <tr>
+            <td>@u.Id</td>
+            <td>@u.Email</td>
+            @if (u.IsManager)
+            {
+                <td onclick="change('@u.Id', 'true')" class="manstat"><a>Является менеджером</a></td>
+            }
+            else
+            {
+                <td onclick="change('@u.Id', 'false')" class="manstat"><a>Не является менеджером</a></td>
+            }
+        </tr>
+    }
+</table>
+
+<form id="userForm" name="userForm" action="/Admin/ChangeUser" method="post">
+    <input name="userId" id="userId" type="hidden">
+    <input name="status" id="status" type="hidden">
+</form>
+
+<style>
+    TD, TH {
+        padding: 5px; /* Поля вокруг текста */
+    }
+    .manstat {
+        cursor: pointer;
+    }
+</style>
+
+<script>
+    function change(id, manageStat) {
+        document.getElementById("userId").value = id;
+        document.getElementById("status").value = manageStat;
+        document.getElementById("userForm").submit();
+    }
+</script>
